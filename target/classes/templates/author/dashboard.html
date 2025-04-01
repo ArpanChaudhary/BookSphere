@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author Dashboard - BookSphere</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <!-- Header -->
+    <div th:replace="fragments/header :: header"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div th:replace="fragments/sidebar :: sidebar(currentPage='author-dashboard')"></div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Author Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a th:href="@{/author/books/add}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add New Book
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Welcome Message -->
+                <div class="alert alert-primary" role="alert">
+                    <h4 class="alert-heading">Welcome, <span th:text="${author.firstName}">Author</span>!</h4>
+                    <p>Welcome to your author dashboard. Here you can manage your books, track performance, and view statistics.</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                            Your Books</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${books.totalElements}">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-book fs-2 text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                            Total Rentals</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${transactions.totalElements}">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-arrow-left-right fs-2 text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                            Unread Notifications</div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${notifications.size()}">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="bi bi-bell fs-2 text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Your Books -->
+                    <div class="col-xl-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-book"></i> Your Books</h5>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${books.empty}" class="alert alert-info" role="alert">
+                                    You haven't added any books yet. <a th:href="@{/author/books/add}" class="alert-link">Add your first book</a>.
+                                </div>
+                                <div th:unless="${books.empty}" class="list-group list-group-flush">
+                                    <div th:each="book : ${books.content}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1" th:text="${book.title}">Book Title</h6>
+                                            <p class="mb-1 small text-muted" th:text="${'ISBN: ' + book.isbn}">ISBN: 1234567890</p>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-secondary me-2" th:text="${book.availableCopies + '/' + book.totalCopies}">5/10</span>
+                                            <a th:href="@{/author/books/{id}/statistics(id=${book.id})}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-graph-up"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a th:href="@{/author/books}" class="btn btn-outline-primary">View All Books</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="col-xl-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-arrow-left-right"></i> Recent Transactions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${transactions.empty}" class="alert alert-info" role="alert">
+                                    No transactions found for your books yet.
+                                </div>
+                                <div th:unless="${transactions.empty}" class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Book</th>
+                                                <th>User</th>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="transaction : ${transactions.content}">
+                                                <td th:text="${transaction.book.title}">Book Title</td>
+                                                <td th:text="${transaction.user.fullName}">User Name</td>
+                                                <td th:text="${#temporals.format(transaction.createdAt, 'yyyy-MM-dd')}">2023-01-01</td>
+                                                <td>
+                                                    <span th:if="${transaction.type.name() == 'ISSUE'}" class="badge bg-primary">Rented</span>
+                                                    <span th:if="${transaction.type.name() == 'RETURN'}" class="badge bg-secondary">Returned</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a th:href="@{/author/statistics}" class="btn btn-outline-success">View Statistics</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-bell"></i> Recent Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div th:if="${notifications.empty}" class="alert alert-info" role="alert">
+                                    You don't have any new notifications.
+                                </div>
+                                <div th:unless="${notifications.empty}" class="list-group list-group-flush">
+                                    <div th:each="notification : ${notifications}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1" th:text="${notification.type.name().replace('_', ' ')}">Notification Type</h6>
+                                            <small th:text="${#temporals.format(notification.createdAt, 'yyyy-MM-dd HH:mm')}">2023-01-01</small>
+                                        </div>
+                                        <p class="mb-1" th:text="${notification.message}">Notification message</p>
+                                        <form th:action="@{/user/notifications/{id}/mark-read(id=${notification.id})}" method="post" class="mt-2">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Mark as Read</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3" th:if="${!notifications.empty}">
+                                    <a th:href="@{/user/notifications}" class="btn btn-outline-info">View All Notifications</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Popular Book Highlight -->
+                <div th:if="${mostPopularBook != null}" class="row">
+                    <div class="col-12 mb-4">
+                        <div class="card bg-light border-0">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h4>Your Most Popular Book</h4>
+                                        <h5 class="text-primary" th:text="${mostPopularBook.title}">Book Title</h5>
+                                        <p class="mb-2" th:text="${#strings.abbreviate(mostPopularBook.description, 200)}">Book description...</p>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-success me-2" th:text="${mostPopularBook.totalCopies - mostPopularBook.availableCopies + ' rentals'}">5 rentals</span>
+                                            <a th:href="@{/author/books/{id}/statistics(id=${mostPopularBook.id})}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-graph-up"></i> View Statistics
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <i class="bi bi-award text-warning" style="font-size: 6rem;"></i>
+                                            <p class="mt-2">Most Popular Book</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

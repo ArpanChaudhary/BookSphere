@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - BookSphere</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <!-- Header -->
+    <div th:replace="fragments/header :: header"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div th:replace="fragments/sidebar :: sidebar(currentPage='dashboard')"></div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a th:href="@{/books}" class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-search"></i> Browse Books
+                        </a>
+                        <a th:href="@{/user/transactions}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-clock-history"></i> Transaction History
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Welcome message -->
+                <div class="alert alert-primary" role="alert">
+                    <h4 class="alert-heading">Welcome, <span th:text="${user.firstName}">User</span>!</h4>
+                    <p>Welcome to your BookSphere dashboard. Here you can manage your book rentals, view your transaction history, and update your profile.</p>
+                </div>
+
+                <!-- Active Rentals -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-book"></i> Your Active Rentals</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" th:if="${!activeRentals.empty}">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Book</th>
+                                        <th>Issue Date</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="rental : ${activeRentals}">
+                                        <td>
+                                            <a th:href="@{/books/{id}(id=${rental.book.id})}" th:text="${rental.book.title}">Book Title</a>
+                                        </td>
+                                        <td th:text="${#temporals.format(rental.issueDate, 'yyyy-MM-dd')}">2023-01-01</td>
+                                        <td th:text="${#temporals.format(rental.dueDate, 'yyyy-MM-dd')}">2023-01-15</td>
+                                        <td>
+                                            <span class="badge bg-warning" th:if="${rental.overdue}">Overdue</span>
+                                            <span class="badge bg-success" th:unless="${rental.overdue}">Active</span>
+                                        </td>
+                                        <td>
+                                            <form th:action="@{/transactions/{id}/return(id=${rental.id})}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-primary">Return</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center py-3" th:if="${activeRentals.empty}">
+                            <p class="text-muted mb-0">You don't have any active rentals.</p>
+                            <a th:href="@{/books}" class="btn btn-primary mt-2">Browse Books</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Notifications -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bell"></i> Recent Notifications</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush" th:if="${!notifications.empty}">
+                            <div th:each="notification : ${notifications}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1" th:text="${notification.type.name().replace('_', ' ')}">Notification Type</h6>
+                                    <small th:text="${#temporals.format(notification.createdAt, 'yyyy-MM-dd HH:mm')}">2023-01-01</small>
+                                </div>
+                                <p class="mb-1" th:text="${notification.message}">Notification message</p>
+                                <form th:action="@{/user/notifications/{id}/mark-read(id=${notification.id})}" method="post" class="mt-2">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Mark as Read</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="text-center py-3" th:if="${notifications.empty}">
+                            <p class="text-muted mb-0">You don't have any new notifications.</p>
+                        </div>
+                        <div class="text-center mt-3" th:if="${!notifications.empty}">
+                            <a th:href="@{/user/notifications}" class="btn btn-outline-primary">View All Notifications</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-search fs-1 text-primary mb-3"></i>
+                                <h5>Find Books</h5>
+                                <p class="mb-3">Browse our catalog and find your next favorite book.</p>
+                                <a th:href="@{/books}" class="btn btn-primary">Browse Books</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-person-circle fs-1 text-primary mb-3"></i>
+                                <h5>Update Profile</h5>
+                                <p class="mb-3">Edit your account information and preferences.</p>
+                                <a th:href="@{/user/profile}" class="btn btn-primary">View Profile</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body text-center py-4">
+                                <i class="bi bi-file-earmark-text fs-1 text-primary mb-3"></i>
+                                <h5>Transaction History</h5>
+                                <p class="mb-3">View your rental history and current transactions.</p>
+                                <a th:href="@{/user/transactions}" class="btn btn-primary">View History</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

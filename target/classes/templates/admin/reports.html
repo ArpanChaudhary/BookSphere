@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - BookSphere</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+<body>
+    <!-- Header -->
+    <div th:replace="fragments/header :: header"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div th:replace="fragments/sidebar :: sidebar(currentPage='admin-reports')"></div>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Reports</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a th:href="@{/admin/dashboard}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Transaction Report -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Transaction Report</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Generate a report of all transactions within a specific date range.</p>
+                                <form th:action="@{/admin/reports/transactions}" method="get" target="_blank">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="startDate" class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" id="startDate" name="startDate" 
+                                                   th:value="${#dates.format(startDate, 'yyyy-MM-dd')}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="endDate" class="form-label">End Date</label>
+                                            <input type="date" class="form-control" id="endDate" name="endDate" 
+                                                   th:value="${#dates.format(endDate, 'yyyy-MM-dd')}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-search"></i> Generate Report
+                                        </button>
+                                        <button type="submit" class="btn btn-outline-primary" formaction="/reports/all-transactions">
+                                            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Report -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="bi bi-cash"></i> Revenue Report</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Generate a report of revenue within a specific date range.</p>
+                                <form th:action="@{/admin/reports/revenue}" method="get" target="_blank">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="revenueStartDate" class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" id="revenueStartDate" name="startDate" 
+                                                   th:value="${#dates.format(startDate, 'yyyy-MM-dd')}" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="revenueEndDate" class="form-label">End Date</label>
+                                            <input type="date" class="form-control" id="revenueEndDate" name="endDate" 
+                                                   th:value="${#dates.format(endDate, 'yyyy-MM-dd')}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="bi bi-search"></i> Generate Report
+                                        </button>
+                                        <button type="submit" class="btn btn-outline-success" formaction="/reports/revenue">
+                                            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overdue Books Report -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-danger text-white">
+                                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Overdue Books Report</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Generate a report of all currently overdue books.</p>
+                                <div class="d-grid gap-2">
+                                    <a th:href="@{/admin/reports/overdue}" class="btn btn-danger" target="_blank">
+                                        <i class="bi bi-search"></i> Generate Report
+                                    </a>
+                                    <a th:href="@{/reports/overdue}" class="btn btn-outline-danger" target="_blank">
+                                        <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Book Popularity Report -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Book Popularity Report</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Generate a report of the most popular books based on rental count.</p>
+                                <form th:action="@{/admin/reports/popularity}" method="get" target="_blank">
+                                    <div class="mb-3">
+                                        <label for="limit" class="form-label">Number of Books</label>
+                                        <input type="number" class="form-control" id="limit" name="limit" value="10" min="1" max="100" required>
+                                    </div>
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="bi bi-search"></i> Generate Report
+                                        </button>
+                                        <button type="submit" class="btn btn-outline-info" formaction="/reports/book-popularity">
+                                            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div th:replace="fragments/footer :: footer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/main.js}"></script>
+    <script>
+        // Ensure end date is not before start date
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInputs = document.querySelectorAll('input[type="date"][id$="StartDate"]');
+            const endDateInputs = document.querySelectorAll('input[type="date"][id$="EndDate"]');
+            
+            startDateInputs.forEach(startInput => {
+                const endInput = document.getElementById(startInput.id.replace('Start', 'End'));
+                
+                startInput.addEventListener('change', function() {
+                    if (endInput.value && startInput.value > endInput.value) {
+                        endInput.value = startInput.value;
+                    }
+                    endInput.min = startInput.value;
+                });
+                
+                // Set initial min value
+                if (startInput.value) {
+                    endInput.min = startInput.value;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <!-- Footer Fragment -->
+    <footer th:fragment="footer" class="footer mt-auto py-3 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <span class="text-muted">
+                        <i class="bi bi-book"></i> BookSphere &copy; <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2023</span>
+                    </span>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="#" class="text-muted me-2">Terms of Service</a>
+                    <a href="#" class="text-muted me-2">Privacy Policy</a>
+                    <a href="#" class="text-muted">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
