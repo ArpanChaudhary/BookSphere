@@ -72,7 +72,8 @@ public class SecurityConfig {
             )
             .formLogin(formLogin -> formLogin
                 .loginPage("/login")
-                .defaultSuccessUrl("/dashboard")
+                .loginProcessingUrl("/login") // Explicitly specify the login processing URL
+                .defaultSuccessUrl("/dashboard", true) // Force redirection to this URL after login
                 .permitAll()
             )
             .logout(logout -> logout
