@@ -178,7 +178,7 @@ public class DataInitializer implements CommandLineRunner {
         Notification notification = new Notification();
         notification.setUser(regularUser);
         notification.setMessage("Welcome to BookSphere! Explore our collection of books.");
-        notification.setType(Notification.NotificationType.SYSTEM);
+        notification.setType(Notification.NotificationType.SYSTEM_NOTIFICATION);
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);

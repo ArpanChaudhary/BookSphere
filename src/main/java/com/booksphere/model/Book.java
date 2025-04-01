@@ -7,8 +7,9 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +52,19 @@ public class Book {
 
     @Column(nullable = false)
     private BigDecimal rentalPrice;
+    
+    @Column(name = "published_date")
+    private LocalDate publishedDate;
+    
+    @Column(name = "price")
+    private BigDecimal price;
+    
+    @Column(name = "cover_image")
+    private String coverImage;
+    
+    @ManyToOne
+    @JoinColumn(name = "genre_id")
+    private Genre genre;
 
     @ManyToOne
     @JoinColumn(name = "author_id")

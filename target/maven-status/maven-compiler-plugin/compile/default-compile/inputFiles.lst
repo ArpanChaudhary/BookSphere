@@ -2,6 +2,7 @@
 /home/runner/workspace/src/main/java/com/booksphere/controller/AuthController.java
 /home/runner/workspace/src/main/java/com/booksphere/exception/ResourceNotFoundException.java
 /home/runner/workspace/src/main/java/com/booksphere/repository/TransactionRepository.java
+/home/runner/workspace/src/main/java/com/booksphere/config/DataInitializer.java
 /home/runner/workspace/src/main/java/com/booksphere/controller/BookController.java
 /home/runner/workspace/src/main/java/com/booksphere/model/Genre.java
 /home/runner/workspace/src/main/java/com/booksphere/dto/UserDto.java
