@@ -31,15 +31,31 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Only initialize data if roles are empty (first run)
+        // Only initialize data if this is the first run
         if (userRepository.count() > 0) {
             return;
         }
-
-        // Create roles
-        Role adminRole = roleRepository.findByName("ADMIN").orElse(null);
-        Role userRole = roleRepository.findByName("USER").orElse(null);
-        Role authorRole = roleRepository.findByName("AUTHOR").orElse(null);
+        
+        // Create roles if they don't exist
+        if (roleRepository.count() == 0) {
+            System.out.println("Creating default roles...");
+            Role adminRole = new Role("ADMIN", "Administrator role with full access");
+            Role userRole = new Role("USER", "Regular user with basic access");
+            Role authorRole = new Role("AUTHOR", "Author with book management access");
+            
+            roleRepository.save(adminRole);
+            roleRepository.save(userRole);
+            roleRepository.save(authorRole);
+            System.out.println("Default roles created successfully.");
+        }
+        
+        // Get the roles
+        Role adminRole = roleRepository.findByName("ADMIN")
+            .orElseThrow(() -> new RuntimeException("Admin role not found"));
+        Role userRole = roleRepository.findByName("USER")
+            .orElseThrow(() -> new RuntimeException("User role not found"));
+        Role authorRole = roleRepository.findByName("AUTHOR")
+            .orElseThrow(() -> new RuntimeException("Author role not found"));
 
         // Create user accounts
         User adminUser = new User();
@@ -109,7 +125,9 @@ public class DataInitializer implements CommandLineRunner {
         book1.setIsbn("9781234567890");
         book1.setDescription("An epic tale of adventure and discovery");
         book1.setPublishedDate(LocalDate.of(2023, 1, 15));
+        book1.setPublicationYear(2023);
         book1.setPrice(new BigDecimal("19.99"));
+        book1.setRentalPrice(new BigDecimal("2.99"));
         book1.setAvailableCopies(10);
         book1.setTotalCopies(10);
         book1.setCoverImage("/images/book1.svg");
@@ -124,7 +142,9 @@ public class DataInitializer implements CommandLineRunner {
         book2.setIsbn("9780987654321");
         book2.setDescription("A journey through the cosmos and human potential");
         book2.setPublishedDate(LocalDate.of(2022, 7, 22));
+        book2.setPublicationYear(2022);
         book2.setPrice(new BigDecimal("24.99"));
+        book2.setRentalPrice(new BigDecimal("3.99"));
         book2.setAvailableCopies(5);
         book2.setTotalCopies(5);
         book2.setCoverImage("/images/book2.svg");
@@ -139,7 +159,9 @@ public class DataInitializer implements CommandLineRunner {
         book3.setIsbn("9783456789012");
         book3.setDescription("Discovering magic in everyday places");
         book3.setPublishedDate(LocalDate.of(2021, 12, 10));
+        book3.setPublicationYear(2021);
         book3.setPrice(new BigDecimal("14.99"));
+        book3.setRentalPrice(new BigDecimal("1.99"));
         book3.setAvailableCopies(7);
         book3.setTotalCopies(8);
         book3.setCoverImage("/images/book3.svg");
@@ -154,7 +176,9 @@ public class DataInitializer implements CommandLineRunner {
         book4.setIsbn("9786789012345");
         book4.setDescription("Techniques for controlling your thoughts and achieving mental clarity");
         book4.setPublishedDate(LocalDate.of(2023, 3, 28));
+        book4.setPublicationYear(2023);
         book4.setPrice(new BigDecimal("29.99"));
+        book4.setRentalPrice(new BigDecimal("4.99"));
         book4.setAvailableCopies(3);
         book4.setTotalCopies(3);
         book4.setCoverImage("/images/book4.svg");
@@ -178,7 +202,7 @@ public class DataInitializer implements CommandLineRunner {
         Notification notification = new Notification();
         notification.setUser(regularUser);
         notification.setMessage("Welcome to BookSphere! Explore our collection of books.");
-        notification.setType(Notification.NotificationType.SYSTEM_NOTIFICATION);
+        notification.setType(Notification.NotificationType.SYSTEM);
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notification);

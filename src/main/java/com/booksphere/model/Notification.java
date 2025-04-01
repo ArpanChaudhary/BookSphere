@@ -55,7 +55,8 @@ public class Notification {
         BOOK_AVAILABLE,
         NEW_BOOK_ADDED,
         AUTHOR_UPDATE,
-        SYSTEM_NOTIFICATION
+        SYSTEM_NOTIFICATION,
+        SYSTEM
     }
 
     /**

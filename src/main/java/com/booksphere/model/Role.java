@@ -1,7 +1,10 @@
 package com.booksphere.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import jakarta.persistence.*;
 import java.util.HashSet;
@@ -12,8 +15,11 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "roles")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
+@ToString(exclude = "users")
+@EqualsAndHashCode(exclude = "users")
 public class Role {
 
     @Id

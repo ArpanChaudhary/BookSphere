@@ -9,10 +9,11 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 /**
  * Security configuration for the BookSphere application.
@@ -23,27 +24,27 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public SecurityConfig(UserDetailsService userDetailsService) {
+    public SecurityConfig(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         this.userDetailsService = userDetailsService;
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Bean
     public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(authProvider);
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+        // MVC matcher for Spring MVC paths
+        MvcRequestMatcher.Builder mvcMatcherBuilder = new MvcRequestMatcher.Builder(introspector);
+        
         http
             // Disable CSRF for H2 console
             .csrf(csrf -> csrf.disable())
@@ -51,16 +52,22 @@ public class SecurityConfig {
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
             .authorizeHttpRequests(authorize -> authorize
                 // Public resources
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                .requestMatchers("/", "/index", "/register", "/login").permitAll()
-                // H2 console
-                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/css/**"), 
+                              mvcMatcherBuilder.pattern("/js/**"), 
+                              mvcMatcherBuilder.pattern("/images/**"), 
+                              mvcMatcherBuilder.pattern("/webjars/**")).permitAll()
+                .requestMatchers(mvcMatcherBuilder.pattern("/"), 
+                              mvcMatcherBuilder.pattern("/index"), 
+                              mvcMatcherBuilder.pattern("/register"), 
+                              mvcMatcherBuilder.pattern("/login")).permitAll()
+                // H2 console - use AntPathRequestMatcher for non-Spring MVC paths
+                .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
                 // Admin resources
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers(mvcMatcherBuilder.pattern("/admin/**")).hasRole("ADMIN")
                 // Author resources
-                .requestMatchers("/author/**").hasRole("AUTHOR")
+                .requestMatchers(mvcMatcherBuilder.pattern("/author/**")).hasRole("AUTHOR")
                 // User resources (also accessible by admins and authors)
-                .requestMatchers("/user/**").hasAnyRole("USER", "ADMIN", "AUTHOR")
+                .requestMatchers(mvcMatcherBuilder.pattern("/user/**")).hasAnyRole("USER", "ADMIN", "AUTHOR")
                 .anyRequest().authenticated()
             )
             .formLogin(formLogin -> formLogin

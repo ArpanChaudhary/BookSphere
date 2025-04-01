@@ -42,5 +42,6 @@ com/booksphere/service/ReportService.class
 com/booksphere/service/BookService.class
 com/booksphere/repository/UserRepository.class
 com/booksphere/repository/BookRepository.class
+com/booksphere/config/PasswordConfig.class
 com/booksphere/dto/UserDto.class
 com/booksphere/repository/RoleRepository.class

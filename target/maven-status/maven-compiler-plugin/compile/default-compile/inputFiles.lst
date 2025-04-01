@@ -10,6 +10,7 @@
 /home/runner/workspace/src/main/java/com/booksphere/repository/BookRepository.java
 /home/runner/workspace/src/main/java/com/booksphere/model/Notification.java
 /home/runner/workspace/src/main/java/com/booksphere/service/ReportService.java
+/home/runner/workspace/src/main/java/com/booksphere/config/PasswordConfig.java
 /home/runner/workspace/src/main/java/com/booksphere/controller/AdminController.java
 /home/runner/workspace/src/main/java/com/booksphere/service/UserService.java
 /home/runner/workspace/src/main/java/com/booksphere/service/impl/NotificationServiceImpl.java

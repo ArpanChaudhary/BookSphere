@@ -1,8 +1,11 @@
 package com.booksphere.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
+import lombok.AccessLevel;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -18,9 +21,11 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString(exclude = {"roles", "transactions", "authoredBooks", "notifications"})
+@EqualsAndHashCode(exclude = {"roles", "transactions", "authoredBooks", "notifications"})
 public class User {
 
     @Id
@@ -80,12 +85,33 @@ public class User {
     private Set<Notification> notifications = new HashSet<>();
 
     /**
+     * Constructor with all fields except collections
+     */
+    public User(Long id, String username, String password, String email, String firstName, String lastName,
+                String phoneNumber, String address, boolean active, boolean enabled,
+                LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.active = active;
+        this.enabled = enabled;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    /**
      * Convenience method to add a role to this user.
      * 
      * @param role The role to add
      */
     public void addRole(Role role) {
         this.roles.add(role);
+        // Don't modify the role's users collection to avoid lazy loading issues
     }
 
     /**

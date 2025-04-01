@@ -42,7 +42,7 @@ public class Book {
     private int publicationYear;
 
     @Column(nullable = false)
-    private String publisher;
+    private String publisher = "Default Publisher";
 
     @Column(nullable = false)
     private int totalCopies;
