@@ -16,7 +16,7 @@
             </div>
             <h1 class="display-1 fw-bold">500</h1>
             <h2 class="mb-4">Internal Server Error</h2>
-            <p class="lead mb-4" th:text="${errorMessage ?: 'Something went wrong on our end. We\'re working to fix it.'}">
+            <p class="lead mb-4" th:text="${errorMessage != null ? errorMessage : 'Something went wrong on our end. We are working to fix it.'}">
                 Something went wrong on our end. We're working to fix it.
             </p>
             <div class="mb-4" th:if="${errorDetails != null}">

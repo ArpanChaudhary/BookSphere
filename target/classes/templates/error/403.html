@@ -16,7 +16,7 @@
             </div>
             <h1 class="display-1 fw-bold">403</h1>
             <h2 class="mb-4">Access Denied</h2>
-            <p class="lead mb-4" th:text="${errorMessage ?: 'You do not have permission to access this resource.'}">
+            <p class="lead mb-4" th:text="${errorMessage != null ? errorMessage : 'You do not have permission to access this resource.'}">
                 You do not have permission to access this resource.
             </p>
             <div class="d-flex gap-3 justify-content-center">

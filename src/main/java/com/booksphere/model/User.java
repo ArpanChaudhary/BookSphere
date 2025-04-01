@@ -57,6 +57,9 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     @Column
+    private boolean active = true;
+    
+    @Column
     private boolean enabled = true;
 
     @CreatedDate
