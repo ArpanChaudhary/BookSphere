@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
     address TEXT,
     active BOOLEAN DEFAULT TRUE,
     enabled BOOLEAN DEFAULT TRUE,
+    user_role VARCHAR(20) NOT NULL CHECK (user_role IN ('USER', 'AUTHOR', 'ADMIN')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -43,7 +44,10 @@ CREATE TABLE IF NOT EXISTS user_roles (
 CREATE TABLE IF NOT EXISTS genres (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
-    description VARCHAR(255)
+    description VARCHAR(255),
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create Books table
@@ -55,10 +59,12 @@ CREATE TABLE IF NOT EXISTS books (
     description TEXT,
     published_date DATE,
     price DECIMAL(10, 2) NOT NULL,
+    rental_price DECIMAL(10, 2) NOT NULL,
     available_copies INTEGER NOT NULL DEFAULT 0,
     total_copies INTEGER NOT NULL DEFAULT 0,
     cover_image VARCHAR(255),
     genre_id BIGINT,
+    active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL,
@@ -71,14 +77,14 @@ CREATE TABLE IF NOT EXISTS transactions (
     user_id BIGINT NOT NULL,
     book_id BIGINT NOT NULL,
     issue_date TIMESTAMP NOT NULL,
-    due_date TIMESTAMP,
+    due_date TIMESTAMP NOT NULL,
     return_date TIMESTAMP,
-    fee DECIMAL(10, 2),
+    rental_price DECIMAL(10, 2) NOT NULL,
     late_fee DECIMAL(10, 2),
-    is_paid BOOLEAN DEFAULT FALSE,
+    paid BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    type VARCHAR(20) NOT NULL DEFAULT 'ISSUE',
+    type VARCHAR(20) NOT NULL CHECK (type IN ('ISSUE', 'RETURN')),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (book_id) REFERENCES books (id) ON DELETE CASCADE
 );
@@ -89,7 +95,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     user_id BIGINT NOT NULL,
     message TEXT NOT NULL,
     type VARCHAR(20) NOT NULL,
-    read BOOLEAN DEFAULT FALSE,
+    is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
