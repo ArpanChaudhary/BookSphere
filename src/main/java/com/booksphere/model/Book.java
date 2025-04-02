@@ -32,43 +32,54 @@ public class Book {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
     private String description;
 
-    @Column(nullable = false)
+    @Column(unique = true)
     private String isbn;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "genre_id")
+    private Genre genre;
+
+    @Column(name = "published_year")
+    private Integer publishedYear;
+
+    @Column(name = "total_copies")
+    private Integer totalCopies = 0;
+
+    @Column(name = "available_copies")
+    private Integer availableCopies = 0;
+
     @Column(nullable = false)
-    private int publicationYear;
+    private BigDecimal price;
+
+    @Column(name = "rental_price", nullable = false)
+    private BigDecimal rentalPrice;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(nullable = false)
     private String publisher = "Default Publisher";
 
-    @Column(nullable = false)
-    private int totalCopies;
-
-    @Column(nullable = false)
-    private int availableCopies;
-
-    @Column(nullable = false)
-    private BigDecimal rentalPrice;
-    
     @Column(name = "published_date")
     private LocalDate publishedDate;
-    
-    @Column(name = "price")
-    private BigDecimal price;
-    
+
     @Column(name = "cover_image")
     private String coverImage;
-    
-    @ManyToOne
-    @JoinColumn(name = "genre_id")
-    private Genre genre;
-
-    @ManyToOne
-    @JoinColumn(name = "author_id")
-    private User author;
 
     @ManyToMany
     @JoinTable(
@@ -80,17 +91,6 @@ public class Book {
 
     @OneToMany(mappedBy = "book")
     private Set<Transaction> transactions = new HashSet<>();
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    @Column(nullable = false)
-    private boolean active = true;
 
     /**
      * Checks if the book is available for rental.

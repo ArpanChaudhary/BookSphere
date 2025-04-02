@@ -3,6 +3,7 @@ package com.booksphere.repository;
 import com.booksphere.model.Genre;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,15 +11,24 @@ import java.util.Optional;
 /**
  * Repository interface for Genre entity.
  */
+@Repository
 public interface GenreRepository extends JpaRepository<Genre, Long> {
 
     /**
-     * Find a genre by name.
+     * Find a genre by its name.
      * 
-     * @param name The genre name
-     * @return An optional containing the genre if found
+     * @param name The name of the genre to find
+     * @return Optional containing the genre if found
      */
     Optional<Genre> findByName(String name);
+
+    /**
+     * Check if a genre exists by its name.
+     * 
+     * @param name The name of the genre to check
+     * @return true if the genre exists, false otherwise
+     */
+    boolean existsByName(String name);
 
     /**
      * Find genres by name containing a search term (case insensitive).

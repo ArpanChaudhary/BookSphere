@@ -1,51 +1,29 @@
--- Roles (These are inserted from the application code as well, so we'll skip them here)
--- INSERT INTO roles (name, description) VALUES 
---   ('USER', 'Regular user role with basic permissions'),
---   ('ADMIN', 'Administrative role with full system access'),
---   ('AUTHOR', 'Content creator role for book authors');
+-- Create roles
+INSERT INTO roles (name, description) VALUES ('ADMIN', 'Administrator role with full access');
+INSERT INTO roles (name, description) VALUES ('USER', 'Regular user role with basic access');
+INSERT INTO roles (name, description) VALUES ('AUTHOR', 'Author role with book management access');
 
--- Admin User (password: admin123)
-INSERT INTO users (username, password, email, first_name, last_name, active, enabled, created_at, updated_at)
-VALUES ('admin', '$2a$10$WL7eRzWLe1.kqG5VtXTuS.UR75Hgcq6oqEMCKGRj2IIEwCymWa8YO', 'admin@booksphere.com', 'Admin', 'User', TRUE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (username) DO NOTHING;
+-- Create admin user
+INSERT INTO users (username, password, email, first_name, last_name, active, enabled, created_at, updated_at, user_role)
+VALUES ('admin', '$2a$10$N/qM0.XNqRMbGv9sGT89OOklrhIwrWH1ZhCxLHjuYnk2P.y8B1Dj2', 'admin@booksphere.com', 'Admin', 'User', true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'ADMIN');
 
--- Regular User (password: user123)
-INSERT INTO users (username, password, email, first_name, last_name, active, enabled, created_at, updated_at)
-VALUES ('user', '$2a$10$J1DKzY6U/wPPCdTdpGXDcepxv9Jyj/7B.JNsB/QJlTpiqPAyZRn8K', 'user@booksphere.com', 'Regular', 'User', TRUE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (username) DO NOTHING;
-
--- Author User (password: author123)
-INSERT INTO users (username, password, email, first_name, last_name, active, enabled, created_at, updated_at)
-VALUES ('author', '$2a$10$Vj1D1JvQ.l4nYWzLJx1vp.2EKrw2tJUqSJhKKEVf2RsmK5F/.Kz4.', 'author@booksphere.com', 'Famous', 'Author', TRUE, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (username) DO NOTHING;
-
--- Assign roles to users (Join table)
+-- Assign roles to admin user
 INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'admin' AND r.name = 'ADMIN'
-ON CONFLICT (user_id, role_id) DO NOTHING;
+SELECT u.id, r.id FROM users u, roles r
+WHERE u.username = 'admin' AND r.name = 'ADMIN';
 
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'user' AND r.name = 'USER'
-ON CONFLICT (user_id, role_id) DO NOTHING;
-
-INSERT INTO user_roles (user_id, role_id)
-SELECT u.id, r.id FROM users u, roles r WHERE u.username = 'author' AND r.name = 'AUTHOR'
-ON CONFLICT (user_id, role_id) DO NOTHING;
-
--- Genres
-INSERT INTO genres (name, description)
-VALUES 
-  ('Fiction', 'Fictional literature'),
-  ('Non-Fiction', 'Factual writing'),
-  ('Science Fiction', 'Speculative fiction with scientific concepts'),
-  ('Fantasy', 'Fiction with magical or supernatural elements'),
-  ('Mystery', 'Fiction dealing with solving a crime or puzzle'),
-  ('Romance', 'Stories about romantic love'),
-  ('Biography', 'Account of a person''s life written by someone else'),
-  ('History', 'Study of past events'),
-  ('Self-Help', 'Books for personal improvement'),
-  ('Children', 'Books for young readers')
-ON CONFLICT (name) DO NOTHING;
+-- Create genres
+INSERT INTO genres (name, description, active, created_at)
+VALUES ('Fiction', 'Literary works created from the imagination', true, CURRENT_TIMESTAMP),
+       ('Non-Fiction', 'Literature based on facts and real events', true, CURRENT_TIMESTAMP),
+       ('Science Fiction', 'Fiction based on imagined future scientific discoveries', true, CURRENT_TIMESTAMP),
+       ('Mystery', 'Fiction dealing with the solution of a crime or puzzle', true, CURRENT_TIMESTAMP),
+       ('Romance', 'Fiction focused on romantic love stories', true, CURRENT_TIMESTAMP),
+       ('Fantasy', 'Fiction featuring magical and supernatural elements', true, CURRENT_TIMESTAMP),
+       ('Biography', 'Non-fiction accounts of peoples lives', true, CURRENT_TIMESTAMP),
+       ('History', 'Non-fiction about past events', true, CURRENT_TIMESTAMP),
+       ('Self-Help', 'Books for personal development', true, CURRENT_TIMESTAMP),
+       ('Technology', 'Books about technological subjects', true, CURRENT_TIMESTAMP);
 
 -- Books (Associate with author user)
 INSERT INTO books (title, author_id, isbn, description, published_date, price, available_copies, total_copies, cover_image, genre_id)

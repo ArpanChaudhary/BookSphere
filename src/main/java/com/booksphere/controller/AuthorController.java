@@ -180,10 +180,15 @@ public class AuthorController {
             bookDto.setTitle(book.getTitle());
             bookDto.setDescription(book.getDescription());
             bookDto.setIsbn(book.getIsbn());
-            bookDto.setPublicationYear(book.getPublicationYear());
+            bookDto.setAuthorId(book.getAuthor().getId());
+            bookDto.setPublishedYear(book.getPublishedYear());
             bookDto.setPublisher(book.getPublisher());
+            bookDto.setPrice(book.getPrice());
             bookDto.setRentalPrice(book.getRentalPrice());
             bookDto.setTotalCopies(book.getTotalCopies());
+            bookDto.setAvailableCopies(book.getAvailableCopies());
+            bookDto.setPublishedDate(book.getPublishedDate());
+            bookDto.setCoverImage(book.getCoverImage());
             
             // Set genre IDs if any
             bookDto.setGenreIds(book.getGenres().stream()
@@ -267,45 +272,38 @@ public class AuthorController {
             return "redirect:/author/books";
         }
         
+        // Set default date range if not provided
         if (startDate == null) {
             startDate = LocalDate.now().minusMonths(1);
         }
-        
         if (endDate == null) {
             endDate = LocalDate.now();
         }
         
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(23, 59, 59);
-        
-        // Get transactions for the book
-        Page<Transaction> transactions = transactionService.findByBook(
-                book, PageRequest.of(0, 100, Sort.by("createdAt").descending()));
-        
-        // Calculate rental statistics
-        long totalRentals = transactions.getTotalElements();
-        long activeRentals = transactions.getContent().stream()
-                .filter(t -> t.getType() == Transaction.TransactionType.ISSUE && t.getReturnDate() == null)
-                .count();
-        
+        // Get statistics
         model.addAttribute("book", book);
-        model.addAttribute("transactions", transactions);
-        model.addAttribute("totalRentals", totalRentals);
-        model.addAttribute("activeRentals", activeRentals);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
+        
+        // Get rental statistics
+        model.addAttribute("rentalStats", reportService.getBookRentalStatistics(
+                book.getId(), startDate, endDate));
+        
+        // Get revenue statistics
+        model.addAttribute("revenueStats", reportService.getBookRevenueStatistics(
+                book.getId(), startDate, endDate));
         
         return "author/book-statistics";
     }
 
     /**
-     * Display the author's statistics page.
+     * Display the author's overall statistics page.
      * 
      * @param userDetails The authenticated user details
      * @param startDate The start date
      * @param endDate The end date
      * @param model The model
-     * @return The author's statistics view
+     * @return The author statistics view
      */
     @GetMapping("/statistics")
     public String showAuthorStatistics(
@@ -315,25 +313,30 @@ public class AuthorController {
             Model model) {
         
         User author = userService.findByUsername(userDetails.getUsername());
-        model.addAttribute("author", author);
         
+        // Set default date range if not provided
         if (startDate == null) {
             startDate = LocalDate.now().minusMonths(1);
         }
-        
         if (endDate == null) {
             endDate = LocalDate.now();
         }
         
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(23, 59, 59);
-        
-        // Get revenue report for the author
-        model.addAttribute("reportData", 
-                reportService.generateAuthorRevenueReport(author.getId(), start, end));
-        
+        // Get statistics
+        model.addAttribute("author", author);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
+        
+        // Get overall statistics
+        model.addAttribute("overallStats", reportService.getAuthorOverallStatistics(
+                author.getId(), startDate, endDate));
+        
+        // Get revenue statistics
+        model.addAttribute("revenueStats", reportService.getAuthorRevenueStatistics(
+                author.getId(), startDate, endDate));
+        
+        // Get popular books
+        model.addAttribute("popularBooks", bookService.findMostPopular(5));
         
         return "author/statistics";
     }

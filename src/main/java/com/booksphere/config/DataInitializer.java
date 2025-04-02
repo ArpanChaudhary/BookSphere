@@ -68,6 +68,7 @@ public class DataInitializer implements CommandLineRunner {
         adminUser.setEnabled(true);
         adminUser.setCreatedAt(LocalDateTime.now());
         adminUser.setUpdatedAt(LocalDateTime.now());
+        adminUser.setUserRole(UserRole.ADMIN);
         adminUser.addRole(adminRole);
         userRepository.save(adminUser);
 
@@ -81,6 +82,7 @@ public class DataInitializer implements CommandLineRunner {
         regularUser.setEnabled(true);
         regularUser.setCreatedAt(LocalDateTime.now());
         regularUser.setUpdatedAt(LocalDateTime.now());
+        regularUser.setUserRole(UserRole.USER);
         regularUser.addRole(userRole);
         userRepository.save(regularUser);
 
@@ -94,6 +96,7 @@ public class DataInitializer implements CommandLineRunner {
         authorUser.setEnabled(true);
         authorUser.setCreatedAt(LocalDateTime.now());
         authorUser.setUpdatedAt(LocalDateTime.now());
+        authorUser.setUserRole(UserRole.AUTHOR);
         authorUser.addRole(authorRole);
         userRepository.save(authorUser);
 
@@ -125,7 +128,7 @@ public class DataInitializer implements CommandLineRunner {
         book1.setIsbn("9781234567890");
         book1.setDescription("An epic tale of adventure and discovery");
         book1.setPublishedDate(LocalDate.of(2023, 1, 15));
-        book1.setPublicationYear(2023);
+        book1.setPublishedYear(2023);
         book1.setPrice(new BigDecimal("19.99"));
         book1.setRentalPrice(new BigDecimal("2.99"));
         book1.setAvailableCopies(10);
@@ -142,7 +145,7 @@ public class DataInitializer implements CommandLineRunner {
         book2.setIsbn("9780987654321");
         book2.setDescription("A journey through the cosmos and human potential");
         book2.setPublishedDate(LocalDate.of(2022, 7, 22));
-        book2.setPublicationYear(2022);
+        book2.setPublishedYear(2022);
         book2.setPrice(new BigDecimal("24.99"));
         book2.setRentalPrice(new BigDecimal("3.99"));
         book2.setAvailableCopies(5);
@@ -159,7 +162,7 @@ public class DataInitializer implements CommandLineRunner {
         book3.setIsbn("9783456789012");
         book3.setDescription("Discovering magic in everyday places");
         book3.setPublishedDate(LocalDate.of(2021, 12, 10));
-        book3.setPublicationYear(2021);
+        book3.setPublishedYear(2021);
         book3.setPrice(new BigDecimal("14.99"));
         book3.setRentalPrice(new BigDecimal("1.99"));
         book3.setAvailableCopies(7);
@@ -176,7 +179,7 @@ public class DataInitializer implements CommandLineRunner {
         book4.setIsbn("9786789012345");
         book4.setDescription("Techniques for controlling your thoughts and achieving mental clarity");
         book4.setPublishedDate(LocalDate.of(2023, 3, 28));
-        book4.setPublicationYear(2023);
+        book4.setPublishedYear(2023);
         book4.setPrice(new BigDecimal("29.99"));
         book4.setRentalPrice(new BigDecimal("4.99"));
         book4.setAvailableCopies(3);
@@ -194,8 +197,9 @@ public class DataInitializer implements CommandLineRunner {
         transaction.setIssueDate(LocalDateTime.now().minusDays(10));
         transaction.setDueDate(LocalDateTime.now().plusDays(20));
         transaction.setType(Transaction.TransactionType.ISSUE);
+        transaction.setRentalPrice(book1.getRentalPrice());
+        transaction.setPaid(true);
         transaction.setCreatedAt(LocalDateTime.now().minusDays(10));
-        transaction.setUpdatedAt(LocalDateTime.now().minusDays(10));
         transactionRepository.save(transaction);
 
         // Create a sample notification

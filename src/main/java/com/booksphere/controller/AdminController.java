@@ -1,33 +1,47 @@
 package com.booksphere.controller;
 
+import com.booksphere.dto.BookDto;
 import com.booksphere.dto.UserDto;
 import com.booksphere.model.Book;
+import com.booksphere.model.Genre;
 import com.booksphere.model.Transaction;
 import com.booksphere.model.User;
+import com.booksphere.model.Role;
 import com.booksphere.service.BookService;
+import com.booksphere.service.FileService;
+import com.booksphere.service.GenreService;
 import com.booksphere.service.ReportService;
 import com.booksphere.service.TransactionService;
 import com.booksphere.service.UserService;
+import com.booksphere.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Controller for admin operations.
  */
 @Controller
 @RequestMapping("/admin")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminController {
 
@@ -35,6 +49,9 @@ public class AdminController {
     private final BookService bookService;
     private final TransactionService transactionService;
     private final ReportService reportService;
+    private final GenreService genreService;
+    private final FileService fileService;
+    private final RoleService roleService;
 
     /**
      * Display the admin dashboard.
@@ -44,23 +61,11 @@ public class AdminController {
      */
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
-        // Get counts for dashboard
-        long userCount = userService.findAll(PageRequest.of(0, 1)).getTotalElements();
-        long bookCount = bookService.findAll(PageRequest.of(0, 1)).getTotalElements();
-        long transactionCount = transactionService.findAll(PageRequest.of(0, 1)).getTotalElements();
-        
-        // Get overdue books
-        List<Transaction> overdueTransactions = transactionService.findOverdueTransactions();
-        
-        // Get most popular books
-        List<Book> popularBooks = bookService.findMostPopular(5);
-        
-        model.addAttribute("userCount", userCount);
-        model.addAttribute("bookCount", bookCount);
-        model.addAttribute("transactionCount", transactionCount);
-        model.addAttribute("overdueCount", overdueTransactions.size());
-        model.addAttribute("overdueTransactions", overdueTransactions);
-        model.addAttribute("popularBooks", popularBooks);
+        // Get statistics for the dashboard
+        model.addAttribute("totalBooks", bookService.countTotalBooks());
+        model.addAttribute("activeRentals", transactionService.countActiveRentals());
+        model.addAttribute("overdueBooks", transactionService.countOverdueBooks());
+        model.addAttribute("totalUsers", userService.countTotalUsers());
         
         return "admin/dashboard";
     }
@@ -75,24 +80,33 @@ public class AdminController {
      * @return The manage users view
      */
     @GetMapping("/users")
-    public String manageUsers(
+    public String listUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Boolean status,
             @RequestParam(required = false) String search,
             Model model) {
         
+        PageRequest pageRequest = PageRequest.of(page, size);
         Page<User> users;
         
-        if (search != null && !search.isEmpty()) {
-            users = userService.searchUsers(search, PageRequest.of(page, size, Sort.by("id").ascending()));
-            model.addAttribute("search", search);
+        if (role != null && !role.isEmpty()) {
+            users = userService.findByRole(role, pageRequest);
+        } else if (status != null) {
+            users = userService.findByEnabled(status, pageRequest);
+        } else if (search != null && !search.isEmpty()) {
+            users = userService.searchUsers(search, pageRequest);
         } else {
-            users = userService.findAll(PageRequest.of(page, size, Sort.by("id").ascending()));
+            users = userService.getAllUsers(pageRequest);
         }
+
+        List<Role> roles = roleService.getAllRoles();
         
         model.addAttribute("users", users);
-        
-        return "admin/manage-users";
+        model.addAttribute("roles", roles);
+        model.addAttribute("userDto", new UserDto());
+        return "admin/users";
     }
 
     /**
@@ -102,21 +116,38 @@ public class AdminController {
      * @param model The model
      * @return The edit user view
      */
-    @GetMapping("/users/{id}/edit")
-    public String editUser(@PathVariable Long id, Model model) {
-        User user = userService.findById(id);
-        
-        UserDto userDto = new UserDto();
-        userDto.setFirstName(user.getFirstName());
-        userDto.setLastName(user.getLastName());
-        userDto.setEmail(user.getEmail());
-        userDto.setPhoneNumber(user.getPhoneNumber());
-        userDto.setAddress(user.getAddress());
-        
-        model.addAttribute("user", user);
-        model.addAttribute("userDto", userDto);
-        
-        return "admin/edit-user";
+    @GetMapping("/users/{id}")
+    @ResponseBody
+    public User getUser(@PathVariable Long id) {
+        return userService.getUserById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    /**
+     * Create a new user.
+     * 
+     * @param userDto The user information
+     * @param result Binding result
+     * @param redirectAttributes Attributes for redirect
+     * @return Redirect to manage users page
+     */
+    @PostMapping("/users")
+    public String createUser(@Valid @ModelAttribute UserDto userDto,
+                           BindingResult result,
+                           RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            redirectAttributes.addFlashAttribute("error", "Please correct the errors below.");
+            return "redirect:/admin/users";
+        }
+
+        try {
+            userService.registerUser(userDto);
+            redirectAttributes.addFlashAttribute("success", "User created successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to create user: " + e.getMessage());
+        }
+
+        return "redirect:/admin/users";
     }
 
     /**
@@ -124,96 +155,49 @@ public class AdminController {
      * 
      * @param id The user ID
      * @param userDto The updated user information
+     * @param result Binding result
      * @param redirectAttributes Attributes for redirect
      * @return Redirect to manage users page
      */
     @PostMapping("/users/{id}")
-    public String updateUser(
-            @PathVariable Long id,
-            @ModelAttribute UserDto userDto,
-            RedirectAttributes redirectAttributes) {
-        
-        try {
-            userService.updateProfile(id, userDto);
-            redirectAttributes.addFlashAttribute("successMessage", "User updated successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+    public String updateUser(@PathVariable Long id,
+                           @Valid @ModelAttribute UserDto userDto,
+                           BindingResult result,
+                           RedirectAttributes redirectAttributes) {
+        if (result.hasErrors()) {
+            redirectAttributes.addFlashAttribute("error", "Please correct the errors below.");
+            return "redirect:/admin/users";
         }
-        
+
+        try {
+            userDto.setId(id);
+            userService.updateUser(id, userDto);
+            redirectAttributes.addFlashAttribute("success", "User updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update user: " + e.getMessage());
+        }
+
         return "redirect:/admin/users";
     }
 
     /**
-     * Enable or disable a user.
+     * Delete a user.
      * 
      * @param id The user ID
-     * @param enabled The enabled status
      * @param redirectAttributes Attributes for redirect
      * @return Redirect to manage users page
      */
-    @PostMapping("/users/{id}/toggle-status")
-    public String toggleUserStatus(
-            @PathVariable Long id,
-            @RequestParam boolean enabled,
-            RedirectAttributes redirectAttributes) {
-        
+    @DeleteMapping("/users/{id}")
+    public String deleteUser(@PathVariable Long id,
+                           RedirectAttributes redirectAttributes) {
         try {
-            userService.setEnabled(id, enabled);
-            String status = enabled ? "enabled" : "disabled";
-            redirectAttributes.addFlashAttribute("successMessage", "User " + status + " successfully");
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("success", "User deleted successfully.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to delete user: " + e.getMessage());
         }
-        
+
         return "redirect:/admin/users";
-    }
-
-    /**
-     * Add a role to a user.
-     * 
-     * @param id The user ID
-     * @param role The role name
-     * @param redirectAttributes Attributes for redirect
-     * @return Redirect to edit user page
-     */
-    @PostMapping("/users/{id}/add-role")
-    public String addRole(
-            @PathVariable Long id,
-            @RequestParam String role,
-            RedirectAttributes redirectAttributes) {
-        
-        try {
-            userService.addRole(id, role);
-            redirectAttributes.addFlashAttribute("successMessage", "Role added successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        
-        return "redirect:/admin/users/" + id + "/edit";
-    }
-
-    /**
-     * Remove a role from a user.
-     * 
-     * @param id The user ID
-     * @param role The role name
-     * @param redirectAttributes Attributes for redirect
-     * @return Redirect to edit user page
-     */
-    @PostMapping("/users/{id}/remove-role")
-    public String removeRole(
-            @PathVariable Long id,
-            @RequestParam String role,
-            RedirectAttributes redirectAttributes) {
-        
-        try {
-            userService.removeRole(id, role);
-            redirectAttributes.addFlashAttribute("successMessage", "Role removed successfully");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-        }
-        
-        return "redirect:/admin/users/" + id + "/edit";
     }
 
     /**
@@ -247,28 +231,144 @@ public class AdminController {
     }
 
     /**
+     * Display the add book page.
+     * 
+     * @param model The model
+     * @return The add book view
+     */
+    @GetMapping("/books/add")
+    public String showAddBookForm(Model model) {
+        model.addAttribute("bookDto", new BookDto());
+        model.addAttribute("authors", userService.findByRole("AUTHOR"));
+        model.addAttribute("genres", genreService.findAll());
+        return "admin/book-form";
+    }
+
+    /**
+     * Add a new book.
+     * 
+     * @param bookDto The book information
+     * @param coverImage The book cover image
+     * @param redirectAttributes Attributes for redirect
+     * @return Redirect to manage books page
+     */
+    @PostMapping("/books/add")
+    public String addBook(@ModelAttribute BookDto bookDto,
+                         @RequestParam(required = false) MultipartFile coverImage,
+                         RedirectAttributes redirectAttributes) {
+        try {
+            if (coverImage != null && !coverImage.isEmpty()) {
+                String imageUrl = fileService.saveFile(coverImage, "book-covers");
+                bookDto.setCoverImage(imageUrl);
+            }
+            
+            User author = userService.findById(bookDto.getAuthorId());
+            bookService.create(bookDto, author);
+            redirectAttributes.addFlashAttribute("successMessage", "Book added successfully");
+            return "redirect:/admin/books";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/books/add";
+        }
+    }
+
+    /**
+     * Display the edit book page.
+     * 
+     * @param id The book ID
+     * @param model The model
+     * @return The edit book view
+     */
+    @GetMapping("/books/{id}/edit")
+    public String showEditBookForm(@PathVariable Long id, Model model) {
+        Book book = bookService.findById(id);
+        BookDto bookDto = new BookDto();
+        bookDto.setId(book.getId());
+        bookDto.setTitle(book.getTitle());
+        bookDto.setIsbn(book.getIsbn());
+        bookDto.setDescription(book.getDescription());
+        bookDto.setAuthorId(book.getAuthor().getId());
+        bookDto.setPublisher(book.getPublisher());
+        bookDto.setPublishedYear(book.getPublishedYear());
+        bookDto.setPublishedDate(book.getPublishedDate());
+        bookDto.setCoverImage(book.getCoverImage());
+        bookDto.setPrice(book.getPrice());
+        bookDto.setRentalPrice(book.getRentalPrice());
+        bookDto.setTotalCopies(book.getTotalCopies());
+        bookDto.setAvailableCopies(book.getAvailableCopies());
+        bookDto.setGenreIds(book.getGenres().stream()
+                .map(Genre::getId)
+                .collect(Collectors.toSet()));
+        
+        model.addAttribute("book", book);
+        model.addAttribute("bookDto", bookDto);
+        model.addAttribute("authors", userService.findByRole("AUTHOR"));
+        model.addAttribute("genres", genreService.findAll());
+        return "admin/book-form";
+    }
+
+    /**
+     * Update a book.
+     * 
+     * @param id The book ID
+     * @param bookDto The updated book information
+     * @param coverImage The book cover image
+     * @param redirectAttributes Attributes for redirect
+     * @return Redirect to manage books page
+     */
+    @PostMapping("/books/{id}")
+    public String updateBook(@PathVariable Long id,
+                           @ModelAttribute BookDto bookDto,
+                           @RequestParam(required = false) MultipartFile coverImage,
+                           RedirectAttributes redirectAttributes) {
+        try {
+            if (coverImage != null && !coverImage.isEmpty()) {
+                String imageUrl = fileService.saveFile(coverImage, "book-covers");
+                bookDto.setCoverImage(imageUrl);
+            }
+            
+            bookService.update(id, bookDto);
+            redirectAttributes.addFlashAttribute("successMessage", "Book updated successfully");
+            return "redirect:/admin/books";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/books/" + id + "/edit";
+        }
+    }
+
+    /**
+     * Delete a book.
+     * 
+     * @param id The book ID
+     * @param redirectAttributes Attributes for redirect
+     * @return Redirect to manage books page
+     */
+    @PostMapping("/books/{id}/delete")
+    public String deleteBook(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            bookService.deleteBook(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Book deleted successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/books";
+    }
+
+    /**
      * Activate or deactivate a book.
      * 
      * @param id The book ID
      * @param active The active status
-     * @param redirectAttributes Attributes for redirect
-     * @return Redirect to manage books page
+     * @return ResponseEntity indicating success or failure
      */
     @PostMapping("/books/{id}/toggle-status")
-    public String toggleBookStatus(
-            @PathVariable Long id,
-            @RequestParam boolean active,
-            RedirectAttributes redirectAttributes) {
-        
+    public ResponseEntity<?> toggleBookStatus(@PathVariable Long id, @RequestParam boolean active) {
         try {
             bookService.setActive(id, active);
-            String status = active ? "activated" : "deactivated";
-            redirectAttributes.addFlashAttribute("successMessage", "Book " + status + " successfully");
+            return ResponseEntity.ok().build();
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        
-        return "redirect:/admin/books";
     }
 
     /**
@@ -396,5 +496,187 @@ public class AdminController {
         model.addAttribute("reportType", "popularity");
         
         return "admin/report-result";
+    }
+
+    @GetMapping("/genres")
+    public String showGenresManagement(Model model) {
+        model.addAttribute("genres", genreService.findAll());
+        return "admin/genres";
+    }
+
+    @PostMapping("/genres/add")
+    public String addGenre(@ModelAttribute Genre genre, RedirectAttributes redirectAttributes) {
+        try {
+            genreService.createGenre(genre);
+            redirectAttributes.addFlashAttribute("successMessage", "Genre added successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/genres";
+    }
+
+    @GetMapping("/genres/{id}")
+    @ResponseBody
+    public Genre getGenre(@PathVariable Long id) {
+        return genreService.getGenreById(id);
+    }
+
+    @PostMapping("/genres/{id}")
+    public String updateGenre(@PathVariable Long id, @ModelAttribute Genre genre, RedirectAttributes redirectAttributes) {
+        try {
+            genreService.updateGenre(id, genre);
+            redirectAttributes.addFlashAttribute("successMessage", "Genre updated successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/genres";
+    }
+
+    @PostMapping("/genres/{id}/delete")
+    public String deleteGenre(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            genreService.deleteGenre(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Genre deleted successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/genres";
+    }
+
+    @PostMapping("/genres/{id}/toggle-status")
+    @ResponseBody
+    public ResponseEntity<?> toggleGenreStatus(@PathVariable Long id, @RequestParam boolean active) {
+        try {
+            Genre genre = genreService.getGenreById(id);
+            genre.setActive(active);
+            genreService.updateGenre(id, genre);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/authors")
+    public String showAuthorsManagement(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role,
+            Model model) {
+        
+        Page<User> authors;
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+        
+        if (search != null && !search.isEmpty()) {
+            authors = userService.searchUsers(search, pageable);
+            model.addAttribute("search", search);
+        } else {
+            authors = userService.findByRole("AUTHOR", pageable);
+        }
+        
+        if (status != null && !status.isEmpty()) {
+            boolean enabled = "active".equals(status);
+            authors = userService.findByEnabled(enabled, pageable);
+            model.addAttribute("status", status);
+        }
+        
+        if (role != null && !role.isEmpty()) {
+            authors = userService.findByRole(role, pageable);
+            model.addAttribute("role", role);
+        }
+        
+        model.addAttribute("authors", authors);
+        return "admin/authors";
+    }
+
+    @PostMapping("/authors/add")
+    public String addAuthor(@ModelAttribute UserDto userDto, RedirectAttributes redirectAttributes) {
+        try {
+            userDto.setRole("AUTHOR");
+            userService.registerUser(userDto);
+            redirectAttributes.addFlashAttribute("successMessage", "Author added successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/authors";
+    }
+
+    @GetMapping("/authors/{id}/edit")
+    public String showEditAuthorForm(@PathVariable Long id, Model model) {
+        User author = userService.findById(id);
+        UserDto userDto = new UserDto();
+        userDto.setFirstName(author.getFirstName());
+        userDto.setLastName(author.getLastName());
+        userDto.setEmail(author.getEmail());
+        userDto.setPhoneNumber(author.getPhoneNumber());
+        userDto.setAddress(author.getAddress());
+        
+        model.addAttribute("author", author);
+        model.addAttribute("userDto", userDto);
+        return "admin/edit-author";
+    }
+
+    @PostMapping("/authors/{id}")
+    public String updateAuthor(@PathVariable Long id, @ModelAttribute UserDto userDto, RedirectAttributes redirectAttributes) {
+        try {
+            userService.updateProfile(id, userDto);
+            redirectAttributes.addFlashAttribute("successMessage", "Author updated successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/authors";
+    }
+
+    @PostMapping("/authors/{id}/delete")
+    public String deleteAuthor(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Author deleted successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/admin/authors";
+    }
+
+    @PostMapping("/authors/{id}/toggle-status")
+    @ResponseBody
+    public ResponseEntity<?> toggleAuthorStatus(@PathVariable Long id, @RequestParam boolean enabled) {
+        try {
+            userService.setEnabled(id, enabled);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/roles")
+    public String showRolesManagement() {
+        return "admin/roles";
+    }
+
+    @GetMapping("/transactions")
+    public String showTransactionsManagement() {
+        return "admin/transactions";
+    }
+
+    @GetMapping("/transactions/overdue")
+    public String showOverdueTransactions() {
+        return "admin/overdue-transactions";
+    }
+
+    @GetMapping("/fees")
+    public String showLateFeesManagement() {
+        return "admin/late-fees";
+    }
+
+    @GetMapping("/settings")
+    public String showSystemSettings() {
+        return "admin/settings";
+    }
+
+    @GetMapping("/logs")
+    public String showSystemLogs() {
+        return "admin/logs";
     }
 }

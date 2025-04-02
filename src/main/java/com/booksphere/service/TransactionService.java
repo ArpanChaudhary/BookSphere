@@ -119,4 +119,12 @@ public interface TransactionService {
      * @return The updated transaction
      */
     Transaction payFees(Long transactionId);
+
+    List<Transaction> findActiveTransactionsByUser(User user);
+    List<Transaction> findCompletedTransactionsByUser(User user);
+    Transaction createTransaction(User user, Long bookId, int rentalDays);
+    Transaction returnBook(Transaction transaction);
+    double calculateLateFee(Transaction transaction);
+    long countActiveRentals();
+    long countOverdueBooks();
 }

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -167,21 +168,14 @@ public class UserController {
      * @return The transaction history view
      */
     @GetMapping("/transactions")
-    public String showTransactionHistory(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            Model model) {
+    public String showTransactions(Authentication authentication, Model model) {
+        User user = userService.findByUsername(authentication.getName());
+        List<Transaction> activeTransactions = transactionService.findActiveTransactionsByUser(user);
+        List<Transaction> completedTransactions = transactionService.findCompletedTransactionsByUser(user);
         
-        User user = userService.findByUsername(userDetails.getUsername());
-        model.addAttribute("user", user);
-        
-        // Get transactions with pagination
-        Page<Transaction> transactions = transactionService.findByUser(
-                user, PageRequest.of(page, size, Sort.by("createdAt").descending()));
-        model.addAttribute("transactions", transactions);
-        
-        return "user/transaction-history";
+        model.addAttribute("activeTransactions", activeTransactions);
+        model.addAttribute("completedTransactions", completedTransactions);
+        return "user/transactions";
     }
 
     /**
@@ -224,5 +218,24 @@ public class UserController {
     public String markNotificationAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
         return "redirect:/user/notifications";
+    }
+
+    @PostMapping("/transactions/{id}/return")
+    public String returnBook(@PathVariable Long id, Authentication authentication, RedirectAttributes redirectAttributes) {
+        try {
+            User user = userService.findByUsername(authentication.getName());
+            Transaction transaction = transactionService.findById(id);
+            
+            if (!transaction.getUser().getId().equals(user.getId())) {
+                throw new RuntimeException("You are not authorized to return this book");
+            }
+            
+            transactionService.returnBook(transaction);
+            redirectAttributes.addFlashAttribute("successMessage", "Book returned successfully");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        
+        return "redirect:/user/transactions";
     }
 }

@@ -9,6 +9,7 @@ import com.booksphere.repository.BookRepository;
 import com.booksphere.repository.NotificationRepository;
 import com.booksphere.repository.TransactionRepository;
 import com.booksphere.repository.UserRepository;
+import com.booksphere.service.BookService;
 import com.booksphere.service.TransactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
     private final NotificationRepository notificationRepository;
+    private final BookService bookService;
 
     @Override
     @Transactional(readOnly = true)
@@ -75,7 +77,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setType(Transaction.TransactionType.ISSUE);
         transaction.setIssueDate(LocalDateTime.now());
         transaction.setDueDate(dueDate);
-        transaction.setFee(book.getRentalPrice());
+        transaction.setRentalPrice(book.getRentalPrice());
         transaction.setPaid(false);
         
         // Update book available copies
@@ -214,5 +216,89 @@ public class TransactionServiceImpl implements TransactionService {
         notificationRepository.save(notification);
         
         return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public List<Transaction> findActiveTransactionsByUser(User user) {
+        return transactionRepository.findByUserAndReturnDateIsNull(user);
+    }
+
+    @Override
+    public List<Transaction> findCompletedTransactionsByUser(User user) {
+        return transactionRepository.findByUserAndReturnDateIsNotNull(user);
+    }
+
+    @Override
+    @Transactional
+    public Transaction createTransaction(User user, Long bookId, int rentalDays) {
+        Book book = bookService.findById(bookId);
+        
+        if (book.getAvailableCopies() <= 0) {
+            throw new RuntimeException("Book is not available for rental");
+        }
+
+        Transaction transaction = new Transaction();
+        transaction.setUser(user);
+        transaction.setBook(book);
+        transaction.setIssueDate(LocalDateTime.now());
+        transaction.setDueDate(LocalDateTime.now().plusDays(rentalDays));
+        transaction.setType(Transaction.TransactionType.ISSUE);
+
+        // Update book availability
+        book.setAvailableCopies(book.getAvailableCopies() - 1);
+        bookRepository.save(book);
+
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    @Transactional
+    public Transaction returnBook(Transaction transaction) {
+        if (transaction.getReturnDate() != null) {
+            throw new RuntimeException("Book has already been returned");
+        }
+
+        transaction.setReturnDate(LocalDateTime.now());
+        transaction.setType(Transaction.TransactionType.RETURN);
+        
+        // Calculate late fee if applicable
+        BigDecimal lateFee = BigDecimal.valueOf(calculateLateFee(transaction));
+        transaction.setLateFee(lateFee);
+
+        // Update book availability
+        Book book = transaction.getBook();
+        book.setAvailableCopies(book.getAvailableCopies() + 1);
+        bookRepository.save(book);
+
+        return transactionRepository.save(transaction);
+    }
+
+    @Override
+    public double calculateLateFee(Transaction transaction) {
+        if (transaction.getReturnDate() == null || transaction.getDueDate() == null) {
+            return 0.0;
+        }
+
+        long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(
+                transaction.getDueDate(),
+                transaction.getReturnDate()
+        );
+
+        if (daysOverdue <= 0) {
+            return 0.0;
+        }
+
+        // Calculate late fee: $1 per day overdue
+        return daysOverdue;
+    }
+
+    @Override
+    public long countActiveRentals() {
+        return transactionRepository.countByReturnDateIsNull();
+    }
+
+    @Override
+    public long countOverdueBooks() {
+        return transactionRepository.countByDueDateBeforeAndReturnDateIsNull(LocalDateTime.now());
     }
 }

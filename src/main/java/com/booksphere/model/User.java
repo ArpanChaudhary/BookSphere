@@ -9,9 +9,14 @@ import lombok.AccessLevel;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,32 +31,43 @@ import java.util.Set;
 @NoArgsConstructor
 @ToString(exclude = {"roles", "transactions", "authoredBooks", "notifications"})
 @EqualsAndHashCode(exclude = {"roles", "transactions", "authoredBooks", "notifications"})
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column
+    @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column
+    @Column(name = "address", length = 500)
     private String address;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+    
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_role", nullable = false)
+    private UserRole userRole;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -61,18 +77,12 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
-    @Column
-    private boolean active = true;
-    
-    @Column
-    private boolean enabled = true;
-
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @LastModifiedDate
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
@@ -121,5 +131,54 @@ public class User {
      */
     public String getFullName() {
         return firstName + " " + lastName;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Add a role to this user.
+     * 
+     * @param roleName The role name to add
+     */
+    public void addRole(String roleName) {
+        this.userRole = UserRole.valueOf(roleName.toUpperCase());
+    }
+
+    /**
+     * Remove a role from this user.
+     * 
+     * @param roleName The role name to remove
+     */
+    public void removeRole(String roleName) {
+        if (this.userRole.name().equals(roleName.toUpperCase())) {
+            this.userRole = UserRole.USER; // Default to USER role
+        }
+    }
+
+    public void removeRole(Role role) {
+        roles.remove(role);
     }
 }

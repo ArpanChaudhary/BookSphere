@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Rentals - BookSphere</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/main.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book-open me-2"></i>BookSphere
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/books}">Books</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/user/transactions}">My Rentals</a>
+                    </li>
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-light">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">My Book Rentals</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Active Rentals -->
+                        <h5 class="mb-4">Active Rentals</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Book</th>
+                                        <th>Issue Date</th>
+                                        <th>Due Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="transaction : ${activeTransactions}">
+                                        <td>
+                                            <a th:href="@{/books/{id}(id=${transaction.book.id})}" class="text-decoration-none">
+                                                <strong th:text="${transaction.book.title}">Book Title</strong>
+                                            </a>
+                                        </td>
+                                        <td th:text="${#temporals.format(transaction.issueDate, 'MMM dd, yyyy')}">Jan 01, 2024</td>
+                                        <td th:text="${#temporals.format(transaction.dueDate, 'MMM dd, yyyy')}">Jan 15, 2024</td>
+                                        <td>
+                                            <span class="badge bg-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <form th:action="@{/user/transactions/{id}/return(id=${transaction.id})}" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-undo me-1"></i>Return
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(activeTransactions)}">
+                                        <td colspan="5" class="text-center py-4">
+                                            <i class="fas fa-book-reader fa-2x text-muted mb-3"></i>
+                                            <p class="text-muted mb-0">No active rentals</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Rental History -->
+                        <h5 class="mb-4 mt-5">Rental History</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Book</th>
+                                        <th>Issue Date</th>
+                                        <th>Return Date</th>
+                                        <th>Status</th>
+                                        <th>Late Fee</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="transaction : ${completedTransactions}">
+                                        <td>
+                                            <a th:href="@{/books/{id}(id=${transaction.book.id})}" class="text-decoration-none">
+                                                <strong th:text="${transaction.book.title}">Book Title</strong>
+                                            </a>
+                                        </td>
+                                        <td th:text="${#temporals.format(transaction.issueDate, 'MMM dd, yyyy')}">Jan 01, 2024</td>
+                                        <td th:text="${#temporals.format(transaction.returnDate, 'MMM dd, yyyy')}">Jan 15, 2024</td>
+                                        <td>
+                                            <span class="badge" th:classappend="${transaction.lateFee > 0 ? 'bg-danger' : 'bg-success'}"
+                                                  th:text="${transaction.lateFee > 0 ? 'Late' : 'On Time'}">Status</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${transaction.lateFee > 0}" class="text-danger"
+                                                  th:text="${'$' + #numbers.formatDecimal(transaction.lateFee, 1, 2)}">$10.00</span>
+                                            <span th:unless="${transaction.lateFee > 0}" class="text-success">$0.00</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(completedTransactions)}">
+                                        <td colspan="5" class="text-center py-4">
+                                            <i class="fas fa-history fa-2x text-muted mb-3"></i>
+                                            <p class="text-muted mb-0">No rental history</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-4 bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <p class="mb-0">&copy; 2025 BookSphere. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links d-inline-flex">
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html> 

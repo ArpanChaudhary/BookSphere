@@ -1,12 +1,15 @@
 package com.booksphere.model;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
+import lombok.Data;
+import lombok.Builder;
 
-import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,21 +18,23 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "roles")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @ToString(exclude = "users")
 @EqualsAndHashCode(exclude = "users")
 public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "name", nullable = false, unique = true)
     private String name;
 
-    @Column
+    @Column(name = "description")
     private String description;
 
     @ManyToMany(mappedBy = "roles")

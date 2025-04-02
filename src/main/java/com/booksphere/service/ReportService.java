@@ -1,7 +1,10 @@
 package com.booksphere.service;
 
 import com.booksphere.dto.ReportDto;
+import com.booksphere.dto.BookStatisticsDto;
+import com.booksphere.dto.AuthorStatisticsDto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -69,4 +72,44 @@ public interface ReportService {
      * @return The PDF file as a byte array
      */
     byte[] generatePdfReport(ReportDto reportDto);
+
+    /**
+     * Get rental statistics for a book.
+     * 
+     * @param bookId The book ID
+     * @param startDate The start date
+     * @param endDate The end date
+     * @return The book statistics
+     */
+    BookStatisticsDto getBookRentalStatistics(Long bookId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Get revenue statistics for a book.
+     * 
+     * @param bookId The book ID
+     * @param startDate The start date
+     * @param endDate The end date
+     * @return The book statistics
+     */
+    BookStatisticsDto getBookRevenueStatistics(Long bookId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Get overall statistics for an author.
+     * 
+     * @param authorId The author ID
+     * @param startDate The start date
+     * @param endDate The end date
+     * @return The author statistics
+     */
+    AuthorStatisticsDto getAuthorOverallStatistics(Long authorId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * Get revenue statistics for an author.
+     * 
+     * @param authorId The author ID
+     * @param startDate The start date
+     * @param endDate The end date
+     * @return The author statistics
+     */
+    AuthorStatisticsDto getAuthorRevenueStatistics(Long authorId, LocalDate startDate, LocalDate endDate);
 }

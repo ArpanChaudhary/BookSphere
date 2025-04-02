@@ -9,8 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -86,24 +85,24 @@ public class BookController {
     /**
      * Rent a book.
      * 
-     * @param userDetails The authenticated user details
      * @param id The book ID
-     * @param days The rental period in days
+     * @param rentalDays The rental period in days
+     * @param authentication The authenticated user
      * @param redirectAttributes Attributes for redirect
      * @return Redirect to user's transactions page
      */
     @PostMapping("/{id}/rent")
     public String rentBook(
-            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long id,
-            @RequestParam(defaultValue = "14") int days,
+            @RequestParam(defaultValue = "14") int rentalDays,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
         
         try {
-            User user = userService.findByUsername(userDetails.getUsername());
+            User user = userService.findByUsername(authentication.getName());
             
             // Calculate due date
-            LocalDateTime dueDate = LocalDateTime.now().plusDays(days);
+            LocalDateTime dueDate = LocalDateTime.now().plusDays(rentalDays);
             
             // Issue the book
             transactionService.issueBook(user.getId(), id, dueDate);

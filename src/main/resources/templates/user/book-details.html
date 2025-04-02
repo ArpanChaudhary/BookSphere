@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${book.title + ' - BookSphere'}">Book Details - BookSphere</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/main.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book-open me-2"></i>BookSphere
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/books}">Books</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/user/transactions}">My Rentals</a>
+                    </li>
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-light">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <!-- Alert Messages -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${book.title}">Book Title</h5>
+                        <h6 class="card-subtitle mb-2 text-muted" th:text="${book.author}">Author Name</h6>
+                        <p class="card-text" th:text="${book.description}">Description</p>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item">
+                                <strong>ISBN:</strong> <span th:text="${book.isbn}">1234567890</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Publication Year:</strong> <span th:text="${book.publicationYear}">2023</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Status:</strong>
+                                <span class="badge bg-success" th:if="${book.available}">Available</span>
+                                <span class="badge bg-danger" th:unless="${book.available}">Not Available</span>
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Rental Price:</strong>
+                                <span th:text="${'$' + #numbers.formatDecimal(book.rentalPrice, 1, 2)}">$10.00</span>
+                            </li>
+                        </ul>
+                        
+                        <!-- Rent Book Form -->
+                        <form th:if="${book.available}" th:action="@{/books/{id}/rent(id=${book.id})}" method="post">
+                            <div class="mb-3">
+                                <label for="days" class="form-label">Rental Period (Days)</label>
+                                <select class="form-select" id="days" name="days">
+                                    <option value="7">1 Week</option>
+                                    <option value="14" selected>2 Weeks</option>
+                                    <option value="21">3 Weeks</option>
+                                    <option value="30">1 Month</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-book me-1"></i>Rent Book
+                            </button>
+                        </form>
+                        
+                        <div th:unless="${book.available}" class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            This book is currently not available for rent.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <!-- Book Details Tabs -->
+                <ul class="nav nav-tabs" id="bookDetailsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">
+                            Details
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab">
+                            Reviews
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content p-3 border border-top-0" id="bookDetailsTabsContent">
+                    <div class="tab-pane fade show active" id="details" role="tabpanel">
+                        <h4>About the Book</h4>
+                        <p th:text="${book.description}">Detailed description of the book...</p>
+                        
+                        <h4>About the Author</h4>
+                        <p th:text="${book.authorBio ?: 'No author information available.'}">Author biography...</p>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="reviews" role="tabpanel">
+                        <div class="text-center py-4">
+                            <i class="fas fa-star-half-alt fa-3x text-warning mb-3"></i>
+                            <h4>Reviews Coming Soon</h4>
+                            <p class="text-muted">We're working on adding reviews functionality. Stay tuned!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <a th:href="@{/books}" class="text-decoration-none text-muted">
+                <i class="fas fa-arrow-left me-1"></i> Back to Books
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-4 bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <p class="mb-0">&copy; 2025 BookSphere. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links d-inline-flex">
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html> 

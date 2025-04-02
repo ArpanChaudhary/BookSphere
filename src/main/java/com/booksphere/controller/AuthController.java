@@ -63,22 +63,22 @@ public class AuthController {
     public String registerUser(
             @Valid @ModelAttribute("registrationRequest") RegistrationRequest registrationRequest,
             BindingResult bindingResult,
-            RedirectAttributes redirectAttributes) {
+            Model model) {
+        
+        if (!registrationRequest.getPassword().equals(registrationRequest.getConfirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "error.confirmPassword", "Passwords do not match");
+        }
         
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.registrationRequest", bindingResult);
-            redirectAttributes.addFlashAttribute("registrationRequest", registrationRequest);
-            return "redirect:/register";
+            return "register";
         }
         
         try {
             userService.register(registrationRequest);
-            redirectAttributes.addFlashAttribute("successMessage", "Registration successful! Please log in.");
-            return "redirect:/login";
+            return "redirect:/login?registered=true";
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            redirectAttributes.addFlashAttribute("registrationRequest", registrationRequest);
-            return "redirect:/register";
+            model.addAttribute("errorMessage", e.getMessage());
+            return "register";
         }
     }
 }

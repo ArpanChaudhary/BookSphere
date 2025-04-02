@@ -9,14 +9,14 @@ DROP TABLE IF EXISTS roles CASCADE;
 
 -- Create Roles table
 CREATE TABLE IF NOT EXISTS roles (
-    id SERIAL PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(20) NOT NULL UNIQUE,
     description VARCHAR(100) NOT NULL
 );
 
 -- Create Users table
 CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(120) NOT NULL,
     email VARCHAR(50) NOT NULL UNIQUE,
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Create Users-Roles join table
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id INTEGER NOT NULL,
-    role_id INTEGER NOT NULL,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
     PRIMARY KEY (user_id, role_id),
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE
@@ -41,16 +41,16 @@ CREATE TABLE IF NOT EXISTS user_roles (
 
 -- Create Genres table
 CREATE TABLE IF NOT EXISTS genres (
-    id SERIAL PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
     description VARCHAR(255)
 );
 
 -- Create Books table
 CREATE TABLE IF NOT EXISTS books (
-    id SERIAL PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    author_id INTEGER,
+    author_id BIGINT,
     isbn VARCHAR(13) UNIQUE,
     description TEXT,
     published_date DATE,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS books (
     available_copies INTEGER NOT NULL DEFAULT 0,
     total_copies INTEGER NOT NULL DEFAULT 0,
     cover_image VARCHAR(255),
-    genre_id INTEGER,
+    genre_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (author_id) REFERENCES users (id) ON DELETE SET NULL,
@@ -67,9 +67,9 @@ CREATE TABLE IF NOT EXISTS books (
 
 -- Create Transactions table
 CREATE TABLE IF NOT EXISTS transactions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
-    book_id INTEGER NOT NULL,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    book_id BIGINT NOT NULL,
     issue_date TIMESTAMP NOT NULL,
     due_date TIMESTAMP,
     return_date TIMESTAMP,
@@ -78,17 +78,17 @@ CREATE TABLE IF NOT EXISTS transactions (
     is_paid BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    type VARCHAR(20) NOT NULL DEFAULT 'ISSUE', -- Changed default to match our enum (ISSUE, RETURN)
+    type VARCHAR(20) NOT NULL DEFAULT 'ISSUE',
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (book_id) REFERENCES books (id) ON DELETE CASCADE
 );
 
 -- Create Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
     message TEXT NOT NULL,
-    type VARCHAR(20) NOT NULL, -- SYSTEM, OVERDUE, PROMOTION
+    type VARCHAR(20) NOT NULL,
     read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
