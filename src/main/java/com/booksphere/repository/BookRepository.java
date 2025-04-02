@@ -81,8 +81,8 @@ public interface BookRepository extends JpaRepository<Book, Long> {
      * @param limit The maximum number of books to return
      * @return A list of the most popular books
      */
-    @Query("SELECT b FROM Book b ORDER BY SIZE(b.transactions) DESC")
-    List<Book> findMostPopular(int limit);
+    @Query(value = "SELECT b.* FROM books b LEFT JOIN transactions t ON b.id = t.book_id GROUP BY b.id ORDER BY COUNT(t.id) DESC LIMIT :limit", nativeQuery = true)
+    List<Book> findMostPopular(@Param("limit") int limit);
 
     /**
      * Find books by author ID.
